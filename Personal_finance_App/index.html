@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Personal Finance Tracker</h1>
+            <div class="balance">
+                <h2>Total Balance: BHD <span id="total-balance">0.00</span></h2>
+                <p>Income: BHD <span id="total-income">0.00</span> | Expenses: BHD <span id="total-expenses">0.00</span></p>
+            </div>
+        </header>
+
+        <section class="add-transaction">
+            <h3>Add Transaction</h3>
+            <form id="transaction-form">
+                <input type="text" id="description" placeholder="Description" required>
+                <input type="number" id="amount" placeholder="Amount" required>
+                <input type="date" id="date" required>
+                <select id="category" required>
+                    <option value="">Category</option>
+                    <option value="income">Income</option>
+                    <option value="food">Food</option>
+                    <option value="rent">Rent</option>
+                    <option value="transport">Transport</option>
+                </select>
+                <button type="submit"><i class="fas fa-plus"></i> Add Transaction</button>
+            </form>
+            <div id="feedback"></div>
+        </section>
+
+        <section class="transaction-list">
+            <h3>Transaction History</h3>
+            <div>
+                <button onclick="sortTransactions('date')">Sort by Date</button>
+                <button onclick="sortTransactions('amount')">Sort by Amount</button>
+                <button onclick="filterCategory('income')">Filter Income</button>
+                <button onclick="filterCategory('expense')">Filter Expenses</button>
+            </div>
+            <ul id="transaction-history"></ul>
+        </section>
+
+        <section class="chart-section">
+            <h3>Spending Summary</h3>
+            <canvas id="spending-chart"></canvas>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
