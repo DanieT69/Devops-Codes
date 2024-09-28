@@ -1,151 +1,56 @@
-/* Global Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
 
-body {
-    font-family: 'Roboto', sans-serif;
-    background: linear-gradient(135deg, #f0f4f8, #d9e3f0);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
 
-.container {
-    width: 100%;
-    max-width: 700px;
-    background-color: white;
-    padding: 20px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    border-radius: 15px;
-    transition: transform 0.3s ease;
-}
+const express = require('express');
+const mysql = require('mysql');
+const Memcached = require('memcached');
 
-.container:hover {
-    transform: scale(1.02);
-}
+const app = express();
+const PORT = 3000;
 
-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
+// Create MySQL connection
+const db = mysql.createConnection({
+    host: 'db01',    // Replace with your SQL server host
+    user: 'admin',        // Replace with your SQL username
+    password: 'admin123',    // Replace with your SQL password
+    database: 'personal_finance'      // Use the database you created
+});
 
-h1 {
-    font-size: 2.5em;
-    color: #333;
-}
+// Connect to MySQL
+db.connect((err) => {
+    if (err) throw err;
+    console.log('Connected to MySQL database.');
+});
 
-.balance {
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 10px;
-    font-size: 1.2em;
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
-}
+// Create Memcached client
+const memcached = new Memcached('mc01:11211'); // Replace with your Memcache server details
 
-/* Form Styling */
-.add-transaction h3 {
-    margin-bottom: 15px;
-}
+// Sample endpoint to get transactions
+app.get('/transactions', (req, res) => {
+    const cacheKey = 'transactions';
 
-#transaction-form {
-    display: grid;
-    gap: 10px;
-}
+    // Check if data exists in Memcache
+    memcached.get(cacheKey, (err, data) => {
+        if (data) {
+            // Data is in cache, return it
+            return res.json(JSON.parse(data));
+        } else {
+            // Data is not in cache, fetch from SQL
+            db.query('SELECT * FROM Transactions', (err, results) => {
+                if (err) throw err;
 
-#transaction-form input, 
-#transaction-form select, 
-#transaction-form button {
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    font-size: 1em;
-    transition: border-color 0.3s ease;
-}
+                // Store the results in Memcache for next time
+                memcached.set(cacheKey, JSON.stringify(results), 3600, (err) => {
+                    if (err) throw err;
+                });
 
-#transaction-form input:focus, 
-#transaction-form select:focus {
-    border-color: #007bff;
-    outline: none;
-}
+                // Return the results
+                return res.json(results);
+            });
+        }
+    });
+});
 
-#transaction-form button {
-    background-color: #28a745;
-    color: white;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    cursor: pointer;
-}
-
-#transaction-form button:hover {
-    background-color: #218838;
-    transform: translateY(-2px);
-    transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-#feedback {
-    margin-top: 10px;
-    color: green;
-    font-weight: bold;
-}
-
-/* Transaction List Styling */
-.transaction-list {
-    margin-top: 30px;
-}
-
-.transaction-list h3 {
-    margin-bottom: 15px;
-}
-
-.transaction-list ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-.transaction-list li {
-    background-color: #fff;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: background-color 0.3s ease;
-}
-
-.transaction-list li:hover {
-    background-color: #f1f1f1;
-}
-
-.transaction-list .income {
-    border-left: 5px solid #28a745;
-}
-
-.transaction-list .expense {
-    border-left: 5px solid #dc3545;
-}
-
-/* Chart Section */
-.chart-section {
-    margin-top: 30px;
-}
-
-canvas {
-    max-width: 100%;
-}
-
-/* Responsive Design */
-@media (max-width: 600px) {
-    .container {
-        width: 90%;
-    }
-}
-
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
